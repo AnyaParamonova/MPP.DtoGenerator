@@ -96,6 +96,4 @@ namespace DtoGenerator.CodeGenerators.Types
             }
         }
     }
-
-    
 }

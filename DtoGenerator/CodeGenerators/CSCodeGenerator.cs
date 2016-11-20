@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.Formatting;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using DtoGenerator.CodeGenerators.GeneratedItems;
 using System;
-using System.Threading;
+using System.IO;
 
 namespace DtoGenerator.CodeGenerators
 {
@@ -24,12 +24,22 @@ namespace DtoGenerator.CodeGenerators
 
             string classNamespace = parameters.ClassesNamespace;
             ClassDescription classDescription = parameters.ClassDescription;
-
-            NamespaceDeclarationSyntax namespaceDeclaration = GenerateNamespace(classDescription, classNamespace);
-            GeneratedClass generatedClass = new GeneratedClass(classDescription.ClassName, Formatter.Format(namespaceDeclaration, new AdhocWorkspace()).ToFullString());
-
-            parameters.Result = generatedClass;
-            parameters.ResetEvent.Set();
+            try
+            {
+                NamespaceDeclarationSyntax namespaceDeclaration = GenerateNamespace(classDescription, classNamespace);
+                GeneratedClass generatedClass = new GeneratedClass(classDescription.ClassName, Formatter.Format(namespaceDeclaration, new AdhocWorkspace()).ToFullString());
+                parameters.Result = generatedClass;
+            
+            }
+            catch(NullReferenceException e)
+            {
+                parameters.Result = null;
+            }
+            finally
+            {
+                parameters.ResetEvent.Set();
+            }
+            
         }
 
 
@@ -48,12 +58,12 @@ namespace DtoGenerator.CodeGenerators
             classDeclaration = classDeclaration.WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
 
             MemberDeclarationSyntax[] propertiesDeclarations = new MemberDeclarationSyntax[properties.Length];
-            for(int i = 0; i < properties.Length; i++)
+            for (int i = 0; i < properties.Length; i++)
             {
                 Property property = properties[i];
                 string propertyType = supportedTypes.GetNetType(property.Type, property.Format);
                 propertiesDeclarations[i] = GenerateProperty(property.Name, propertyType);
-                
+
             }
 
             classDeclaration = classDeclaration.AddMembers(propertiesDeclarations);

@@ -7,6 +7,7 @@ using DtoGeneratorTest.Parser;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.IO;
 
 namespace DtoGeneratorTest
 {
@@ -53,9 +54,17 @@ namespace DtoGeneratorTest
             DtoCodeGenerator generator = new DtoCodeGenerator(classesNamespace, maxThreadNumber);
             IParser<ClassDescriptionList> parser = new JsonStringParser();
             ClassDescriptionList list = parser.Parse(jsonString);
-            GeneratedClassList classes = generator.GenerateDtoClasses(list);
-            WriteCodeToFiles(classes, directoryPath);
-
+            if(list!= null && list.classDescriptions != null)
+            {
+                GeneratedClassList classes = generator.GenerateDtoClasses(list);
+                WriteCodeToFiles(classes, directoryPath);
+            }
+            else
+            {
+                Console.WriteLine("Json file has invalid format");
+            }
+            
+            
             generator.Dispose();
         }
 

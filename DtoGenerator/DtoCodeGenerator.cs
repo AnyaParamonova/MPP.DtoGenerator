@@ -3,11 +3,12 @@ using DtoGenerator.CodeGenerators.GeneratedItems;
 using DtoGenerator.DtoDescriptor;
 using DtoGenerator.DtoDescriptors;
 using System;
+using System.IO;
 using System.Threading;
 
 namespace DtoGenerator
 {
-    public class DtoCodeGenerator :IDisposable
+    public class DtoCodeGenerator : IDisposable
     {
         private string classesNamespace;
         private int maxThreadNumber;
@@ -26,15 +27,16 @@ namespace DtoGenerator
             this.maxThreadNumber = maxThreadNumber;
             codeGenerator = new CSCodeGenerator();
             generatedClasses = new GeneratedClassList();
+            tasksPool = new TaskInfo[0];
+            doneEvents = new ManualResetEvent[0];
         }
 
         public GeneratedClassList GenerateDtoClasses(ClassDescriptionList list)
         {
-            
-            if(list == null) throw new ArgumentNullException(nameof(list));
+            if (list == null)
+                throw new ArgumentNullException(nameof(list));
 
             GeneratedClassList classes = GenerateClassesCode(list);
-
             return classes;
         }
 
@@ -53,10 +55,12 @@ namespace DtoGenerator
                 AddTaskToQueue(tasksPool[taskAdded]);
                 taskAdded++;
             }
+
             while(taskAdded < allTaskCount)
             {
                 RefillQueueOnTaskFinishing(classDescriptions[taskAdded++]);
             }
+
             FinishAllTasks();
 
             return generatedClasses;
@@ -100,7 +104,11 @@ namespace DtoGenerator
         private void FinishTask(int taskIndex)
         {
             TaskInfo finishedTask = tasksPool[taskIndex];
-            generatedClasses.AddClass(finishedTask.Result);
+            if(finishedTask.Result != null)
+            {
+                generatedClasses.AddClass(finishedTask.Result);
+            }
+
             finishedTask.Dispose();
         }
 
